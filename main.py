@@ -1,0 +1,468 @@
+import time
+import flet as ft
+from classes.board import Board
+
+###########################################################################--Algorithms--###########################################################################
+#########################################################--Functional--########################################################
+
+def is_safe_functional(board, row, col):
+    n = len(board)
+    # Check row on left
+    for i in range(col):
+        if board[row][i] == 1:
+            return False
+    # Check upper diagonal
+    i, j = row, col
+    while i >= 0 and j >= 0:
+        if board[i][j] == 1:
+            return False
+        i -= 1
+        j -= 1
+    # Check lower diagonal
+    i, j = row, col
+    while i < n and j >= 0:
+        if board[i][j] == 1:
+            return False
+        i += 1
+        j -= 1
+    return True
+
+
+def backtrack_functional(board, col=0):
+    """
+    Pure functional-style backtracking.
+    `board` is a plain 2D list; this function returns a NEW board, not modifying input.
+    """
+    n = len(board)
+    if col >= n:
+        return board, True
+
+    for row in range(n):
+        if is_safe_functional(board, row, col):
+            new_board = [r[:] for r in board]
+            new_board[row][col] = 1
+            result, found = backtrack_functional(new_board, col + 1)
+            if found:
+                return result, True
+
+    return board, False
+
+###############################################################################################################################
+
+
+########################################################--Imperative--########################################################
+
+def backtrack_imperative(board, col=0):
+    if col >= board.N:
+        return True
+
+    for i in range(board.N):
+        if board.is_safe(i, col):
+            board.place_queen(i, col)
+
+            if backtrack_imperative(board, col + 1):
+                return True
+
+            board.remove_queen(i, col)
+
+    return False
+
+###############################################################################################################################
+
+
+############################################################--GUI--#############################################################
+# To run write: python main.py   (after: pip install flet)
+
+def main(page: ft.Page):
+    page.title = "N-Queens Problem"
+    page.adaptive = True
+    page.appbar = ft.AppBar(
+        title=ft.Text(
+            value="N-Queens",
+            color="green",
+            size=30,
+            weight=ft.FontWeight.BOLD,
+            text_align=ft.TextAlign.CENTER,
+        ),
+        center_title=True,
+    )
+    page.auto_scroll = True
+    page.scroll = "ALWAYS"
+
+    def show_green(r, c, result):
+        n = int(Ntiles.value)
+        green = set()
+
+        for i in range(n):
+            green.add((r, i))
+            green.add((i, c))
+
+        for i in range(n):
+            for j in range(n):
+                if abs(r - i) == abs(c - j):
+                    green.add((i, j))
+
+        columns = [ft.DataColumn(ft.Text("")) for _ in range(n)]
+        rows = []
+        for i in range(n):
+            cells = []
+            for j in range(n):
+                if (i, j) in green:
+                    if result[i][j] == 1:
+                        cells.append(
+                            ft.DataCell(
+                                ft.Image(
+                                    src="icons/4LG.png",
+                                    fit=ft.ImageFit.CONTAIN,
+                                    width=24,
+                                    height=24,
+                                ),
+                                on_tap=lambda e, r=i, c=j: show_green(r, c, result),
+                            )
+                        )
+                    else:
+                        cells.append(
+                            ft.DataCell(
+                                ft.Icon(
+                                    name=ft.Icons.CLOSE_ROUNDED,
+                                    color=ft.Colors.LIGHT_GREEN,
+                                )
+                            )
+                        )
+                else:
+                    if result[i][j] == 1:
+                        cells.append(
+                            ft.DataCell(
+                                ft.Image(
+                                    src="icons/4G.png",
+                                    fit=ft.ImageFit.CONTAIN,
+                                    width=24,
+                                    height=24,
+                                ),
+                                on_tap=lambda e, r=i, c=j: show_green(r, c, result),
+                            )
+                        )
+                    else:
+                        cells.append(ft.DataCell(ft.Text(" ")))
+
+            rows.append(ft.DataRow(cells=cells))
+
+        table = ft.DataTable(
+            columns=columns,
+            rows=rows,
+            border=ft.border.all(3, ft.Colors.WHITE),
+            border_radius=10,
+            heading_row_height=0,
+            vertical_lines=ft.border.BorderSide(3, ft.Colors.WHITE),
+            horizontal_lines=ft.border.BorderSide(3, ft.Colors.WHITE),
+            expand=True,
+        )
+        table_container = ft.Container(
+            content=ft.Row(
+                controls=[table],
+                scroll=ft.ScrollMode.ALWAYS,
+            ),
+            expand=True,
+            padding=10,
+        )
+        output_container.content = table_container
+        page.update()
+
+    def show_table(result, comp=False):
+        n = int(Ntiles.value)
+        columns = [ft.DataColumn(ft.Text("")) for _ in range(n)]
+        rows = []
+
+        for r, row_data in enumerate(result):
+            cells = []
+            for c, cell in enumerate(row_data):
+                if cell == 1:
+                    if comp:
+                        cells.append(
+                            ft.DataCell(
+                                ft.Image(
+                                    src="icons/4G.png",
+                                    fit=ft.ImageFit.CONTAIN,
+                                    width=24,
+                                    height=24,
+                                )
+                            )
+                        )
+                    else:
+                        cells.append(
+                            ft.DataCell(
+                                ft.Image(
+                                    src="icons/4G.png",
+                                    fit=ft.ImageFit.CONTAIN,
+                                    width=24,
+                                    height=24,
+                                ),
+                                on_tap=lambda e, r=r, c=c: show_green(r, c, result),
+                            )
+                        )
+                else:
+                    cells.append(ft.DataCell(ft.Text(" ")))
+            rows.append(ft.DataRow(cells=cells))
+
+        table = ft.DataTable(
+            columns=columns,
+            rows=rows,
+            border=ft.border.all(3, ft.Colors.WHITE),
+            border_radius=10,
+            heading_row_height=0,
+            vertical_lines=ft.border.BorderSide(3, ft.Colors.WHITE),
+            horizontal_lines=ft.border.BorderSide(3, ft.Colors.WHITE),
+        )
+
+        table_container = ft.Container(
+            content=ft.Row(
+                controls=[table],
+                scroll=ft.ScrollMode.ALWAYS,
+            ),
+            expand=True,
+            padding=10,
+        )
+        return table_container
+
+    def validation():
+        if not Ntiles.value.isdigit() or int(Ntiles.value) <= 0:
+            output_text.value = "Please enter a valid positive integer for number of tiles."
+            output_container.content = output_text
+            output_time.value = ""
+            page.update()
+            return False
+        if color_dropdown.value is None:
+            output_text.value = "Please select a paradigm."
+            output_container.content = output_text
+            output_time.value = ""
+            page.update()
+            return False
+        return True
+
+    def button_clicked(e):
+        if not validation():
+            return
+        result, timing = solve(int(Ntiles.value), int(color_dropdown.value))
+        if isinstance(result, list):
+            output_container.content = show_table(result)
+        else:
+            output_text.value = result
+            output_container.content = output_text
+        output_time.value = f"Time taken: {timing:.6f} seconds"
+        page.update()
+
+    def all_Clicked(e):
+        if not validation():
+            return
+        page.all_results = []
+        solve_all(int(Ntiles.value))
+        page.update()
+
+    def show_comp():
+        columns = [
+            ft.DataColumn(ft.Text("Paradigm")),
+            ft.DataColumn(ft.Text("Time Taken (seconds)")),
+        ]
+        rows = []
+        for name, t, timing in page.all_results:
+            rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(name)),
+                        ft.DataCell(ft.Text(f"{timing:.6f}")),
+                    ]
+                )
+            )
+        table = ft.DataTable(
+            columns=columns,
+            rows=rows,
+            border=ft.border.all(1, ft.Colors.WHITE),
+            border_radius=10,
+        )
+
+        content = ft.Column(
+            [
+                ft.Text(
+                    "Comparison of Paradigms",
+                    weight=ft.FontWeight.BOLD,
+                    size=18,
+                    text_align=ft.TextAlign.CENTER,
+                ),
+                table,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        compall = ft.AlertDialog(
+            modal=True,
+            title="N-Queens Comparison",
+            content=content,
+            alignment=ft.alignment.center,
+            actions=[
+                ft.ElevatedButton(
+                    "Close",
+                    bgcolor=ft.Colors.GREEN,
+                    color=ft.Colors.WHITE,
+                    on_click=lambda e: page.close(compall),
+                )
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        page.open(compall)
+
+    def solve_all(n):
+        page.all_results = []
+        for al in range(1, 3):
+            if al == 1:
+                name = "Pure Functional Paradigm"
+            else:
+                name = "Imperative Paradigm"
+            result, timing = solve(n, al)
+            page.all_results.append((name, result, timing))
+        open_new(n, 1)
+
+    def open_new(n, algo):
+        if algo > 2:
+            show_comp()
+            return
+
+        name, result, timing = page.all_results[algo - 1]
+
+        if isinstance(result, list):
+            table = show_table(result, comp=True)
+            content = ft.Column(
+                [
+                    ft.Text(
+                        value=name,
+                        weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    table,
+                    ft.Text(f"Time taken: {timing:.6f} seconds"),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+        else:
+            content = ft.Column(
+                [
+                    ft.Text(
+                        value=name,
+                        weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Text(result),
+                    ft.Text(f"Time taken: {timing:.6f} seconds"),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+
+        new_page = ft.AlertDialog(
+            modal=True,
+            title="N-Queens Solution",
+            content=content,
+            alignment=ft.alignment.center,
+            actions=[],
+            actions_alignment=ft.MainAxisAlignment.END,
+            scrollable=True,
+        )
+
+        def next(e):
+            page.close(new_page)
+            open_new(n, algo + 1)
+
+        new_page.actions = [
+            ft.ElevatedButton(
+                "Next",
+                on_click=next,
+                bgcolor=ft.Colors.GREEN,
+                color=ft.Colors.WHITE,
+            )
+        ]
+
+        page.open(new_page)
+
+    output_text = ft.Text()
+    output_time = ft.Text()
+    output_container = ft.Container(
+        content=output_text, alignment=ft.alignment.center, expand=True
+    )
+    submit_btn = ft.ElevatedButton(
+        text="Solve",
+        on_click=button_clicked,
+        bgcolor=ft.Colors.GREEN,
+        color=ft.Colors.WHITE,
+    )
+    color_dropdown = ft.Dropdown(
+        text_align=ft.TextAlign.CENTER,
+        hint_text="Select Paradigm",
+        options=[
+            ft.dropdown.Option(1, "Pure Functional Paradigm"),
+            ft.dropdown.Option(2, "Imperative Paradigm"),
+        ],
+    )
+
+    Ntiles = ft.TextField(
+        hint_text="Enter Number of tiles",
+        width=200,
+        text_align=ft.TextAlign.CENTER,
+        keyboard_type=ft.KeyboardType.NUMBER,
+    )
+    all_btn = ft.ElevatedButton(
+        text="All?",
+        on_click=all_Clicked,
+        bgcolor=ft.Colors.GREEN,
+        color=ft.Colors.WHITE,
+    )
+
+    page.add(
+        ft.Container(
+            content=ft.SafeArea(
+                ft.Column(
+                    [
+                        ft.Row(
+                            [Ntiles, all_btn],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                        color_dropdown,
+                        submit_btn,
+                        output_container,
+                        output_time,
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    scroll=ft.ScrollMode.ALWAYS,
+                )
+            ),
+            expand=True,
+            alignment=ft.alignment.center,
+        ),
+    )
+
+###############################################################################################################################
+
+
+###########################################################--Main solve()------------------------------------------------#######
+
+def solve(N, C):
+    start_time = time.time()
+    match C:
+        case 1:  # Pure functional
+            empty_board = [[0] * N for _ in range(N)]
+            result, found = backtrack_functional(empty_board)
+            elapsed = time.time() - start_time
+            if found:
+                return result, elapsed
+            else:
+                return "No Solution Found", elapsed
+        case 2:  # Imperative using Board class
+            board = Board(N)
+            backtrack_imperative(board)
+            result, elapsed = board.print_board()
+            return result, elapsed
+        case _:
+            return "No Such Search Algorithm", 0.0
+
+ft.app(main)
