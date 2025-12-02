@@ -44,6 +44,10 @@ def is_safe_functional(board, row, col):
         is_safe_lower(board, row, col)
     )
 
+def copy_board(board, i=0):
+    if i == len(board):
+        return []
+    return [board[i][:]] + copy_board(board, i + 1)
 
 def try_rows(board, col, row=0):
     n = len(board)
@@ -51,14 +55,13 @@ def try_rows(board, col, row=0):
         return None, False
 
     if is_safe_functional(board, row, col):
-        new_board = [r[:] for r in board]
+        new_board = copy_board(board)
         new_board[row][col] = 1
         result, found = backtrack_functional(new_board, col + 1)
         if found:
             return result, True
 
     return try_rows(board, col, row + 1)
-
 
 def backtrack_functional(board, col=0):
     n = len(board)
