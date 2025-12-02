@@ -2,55 +2,76 @@ import time
 import flet as ft
 from classes.board import Board
 
-###########################################################################--Algorithms--###########################################################################
-#########################################################--Functional--########################################################
+#########################################################--Algorithms--###########################################################################
+
+
+#########################################################--Functional--###########################################################################
+
+def is_safe_row(board, row, col, i=0):
+    if i == col:
+        return True
+    if board[row][i] == 1:
+        return False
+    return is_safe_row(board, row, col, i + 1)
+
+
+def is_safe_upper(board, row, col):
+    def check(i, j):
+        if i < 0 or j < 0:
+            return True
+        if board[i][j] == 1:
+            return False
+        return check(i - 1, j - 1)
+    return check(row, col)
+
+
+def is_safe_lower(board, row, col):
+    n = len(board)
+
+    def check(i, j):
+        if i >= n or j < 0:
+            return True
+        if board[i][j] == 1:
+            return False
+        return check(i + 1, j - 1)
+    return check(row, col)
+
 
 def is_safe_functional(board, row, col):
+    return (
+        is_safe_row(board, row, col) and
+        is_safe_upper(board, row, col) and
+        is_safe_lower(board, row, col)
+    )
+
+
+def try_rows(board, col, row=0):
     n = len(board)
-    # Check row on left
-    for i in range(col):
-        if board[row][i] == 1:
-            return False
-    # Check upper diagonal
-    i, j = row, col
-    while i >= 0 and j >= 0:
-        if board[i][j] == 1:
-            return False
-        i -= 1
-        j -= 1
-    # Check lower diagonal
-    i, j = row, col
-    while i < n and j >= 0:
-        if board[i][j] == 1:
-            return False
-        i += 1
-        j -= 1
-    return True
+    if row == n:
+        return None, False
+
+    if is_safe_functional(board, row, col):
+        new_board = [r[:] for r in board]
+        new_board[row][col] = 1
+        result, found = backtrack_functional(new_board, col + 1)
+        if found:
+            return result, True
+
+    return try_rows(board, col, row + 1)
 
 
 def backtrack_functional(board, col=0):
-    """
-    Pure functional-style backtracking.
-    `board` is a plain 2D list; this function returns a NEW board, not modifying input.
-    """
     n = len(board)
     if col >= n:
         return board, True
 
-    for row in range(n):
-        if is_safe_functional(board, row, col):
-            new_board = [r[:] for r in board]
-            new_board[row][col] = 1
-            result, found = backtrack_functional(new_board, col + 1)
-            if found:
-                return result, True
+    return try_rows(board, col)
 
-    return board, False
 
 ###############################################################################################################################
 
 
-########################################################--Imperative--########################################################
+########################################################--Imperative--#########################################################
 
 def backtrack_imperative(board, col=0):
     if col >= board.N:
@@ -67,7 +88,7 @@ def backtrack_imperative(board, col=0):
 
     return False
 
-###############################################################################################################################
+################################################################################################################################
 
 
 ############################################################--GUI--#############################################################
@@ -444,7 +465,7 @@ def main(page: ft.Page):
 ###############################################################################################################################
 
 
-###########################################################--Main solve()------------------------------------------------#######
+###########################################################--Main solve()--####################################################
 
 def solve(N, C):
     start_time = time.time()
