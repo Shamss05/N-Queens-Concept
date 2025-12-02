@@ -67,10 +67,6 @@ def backtrack_functional(board, col=0):
 
     return try_rows(board, col)
 
-
-###############################################################################################################################
-
-
 ########################################################--Imperative--#########################################################
 
 def backtrack_imperative(board, col=0):
@@ -160,7 +156,7 @@ def main(page: ft.Page):
                                     width=24,
                                     height=24,
                                 ),
-                                on_tap=lambda e, r=i, c=j: show_green(r, c, result),
+                                on_tap=lambda e, r=r, c=c: show_green(r, c, result),
                             )
                         )
                     else:
@@ -467,11 +463,27 @@ def main(page: ft.Page):
 
 ###########################################################--Main solve()--####################################################
 
+#create board & row fun
+def create_row(n, acc=None):
+    if acc is None:
+        acc = []
+    if len(acc) == n:
+        return acc
+    return create_row(n, acc + [0])
+
+def create_board(n, acc=None):
+    if acc is None:
+        acc = []
+    if len(acc) == n:
+        return acc
+    return create_board(n, acc + [create_row(n)])
+
+
 def solve(N, C):
     start_time = time.time()
     match C:
         case 1:  # Pure functional
-            empty_board = [[0] * N for _ in range(N)]
+            empty_board = create_board(N)
             result, found = backtrack_functional(empty_board)
             elapsed = time.time() - start_time
             if found:
